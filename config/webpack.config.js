@@ -5,6 +5,7 @@ const path = require('path');
 const webpack = require('webpack');
 const resolve = require('resolve');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { ModuleFederationPlugin } = require('webpack').container;
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 const InlineChunkHtmlPlugin = require('react-dev-utils/InlineChunkHtmlPlugin');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -219,7 +220,7 @@ module.exports = function (webpackEnv) {
       // webpack uses `publicPath` to determine where the app is being served from.
       // It requires a trailing slash, or the file assets will get an incorrect path.
       // We inferred the "public path" (such as / or /my-project) from homepage.
-      publicPath: paths.publicUrlOrPath,
+      publicPath: 'http://localhost:3001/',
       // Point sourcemap entries to original disk location (format as URL on Windows)
       devtoolModuleFilenameTemplate: isEnvProduction
         ? info =>
@@ -589,6 +590,23 @@ module.exports = function (webpackEnv) {
             : undefined
         )
       ),
+      new ModuleFederationPlugin({
+        name: 'sub_app',
+        filename: 'subEntry.js',
+        remotes: {
+          // 注册一个运行时的 module
+          'home': 'home@http://localhost:3000/homeEntry.js', // 必须配，因为要复用著应用的组件
+        },
+        // exposes: {
+        //   './routes': './src/router/index.js',
+        // },
+        shared: ['react', 'react-dom'],
+        // init: (module, federationData) => {
+        //   if (module && module.afterRegister) {
+        //     module.afterRegister();
+        //   }
+        // }
+      }),
       // Inlines the webpack runtime script. This script is too small to warrant
       // a network request.
       // https://github.com/facebook/create-react-app/issues/5358
